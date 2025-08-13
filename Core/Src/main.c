@@ -44,6 +44,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+OSPI_HandleTypeDef hospi1;
+
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
@@ -54,7 +56,11 @@ UART_HandleTypeDef huart3;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART3_UART_Init(void);
+static void MX_OCTOSPI1_Init(void);
+static void MX_ICACHE_Init(void);
 /* USER CODE BEGIN PFP */
+void RunHyperRAMTest(void);
+void OctoSPI_RegisterDump(OSPI_HandleTypeDef *hospi);
 
 /* USER CODE END PFP */
 
@@ -98,7 +104,13 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART3_UART_Init();
+  MX_OCTOSPI1_Init();
+  MX_ICACHE_Init();
   /* USER CODE BEGIN 2 */
+  OctoSPI_RegisterDump(&hospi1);
+  RunHyperRAMTest();
+
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -161,6 +173,97 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief ICACHE Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ICACHE_Init(void)
+{
+
+  /* USER CODE BEGIN ICACHE_Init 0 */
+
+  /* USER CODE END ICACHE_Init 0 */
+
+  /* USER CODE BEGIN ICACHE_Init 1 */
+
+  /* USER CODE END ICACHE_Init 1 */
+
+  /** Enable instruction cache in 1-way (direct mapped cache)
+  */
+  if (HAL_ICACHE_ConfigAssociativityMode(ICACHE_1WAY) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_ICACHE_Enable() != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ICACHE_Init 2 */
+
+  /* USER CODE END ICACHE_Init 2 */
+
+}
+
+/**
+  * @brief OCTOSPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_OCTOSPI1_Init(void)
+{
+
+  /* USER CODE BEGIN OCTOSPI1_Init 0 */
+
+  /* USER CODE END OCTOSPI1_Init 0 */
+
+  OSPI_HyperbusCfgTypeDef sHyperBusCfg = {0};
+  HAL_OSPI_DLYB_CfgTypeDef HAL_OSPI_DLYB_Cfg_Struct = {0};
+
+  /* USER CODE BEGIN OCTOSPI1_Init 1 */
+
+  /* USER CODE END OCTOSPI1_Init 1 */
+  /* OCTOSPI1 parameter configuration*/
+  hospi1.Instance = OCTOSPI1;
+  hospi1.Init.FifoThreshold = 4;
+  hospi1.Init.DualQuad = HAL_OSPI_DUALQUAD_DISABLE;
+  hospi1.Init.MemoryType = HAL_OSPI_MEMTYPE_HYPERBUS;
+  hospi1.Init.DeviceSize = 24;
+  hospi1.Init.ChipSelectHighTime = 8;
+  hospi1.Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
+  hospi1.Init.ClockMode = HAL_OSPI_CLOCK_MODE_0;
+  hospi1.Init.WrapSize = HAL_OSPI_WRAP_NOT_SUPPORTED;
+  hospi1.Init.ClockPrescaler = 4;
+  hospi1.Init.SampleShifting = HAL_OSPI_SAMPLE_SHIFTING_NONE;
+  hospi1.Init.DelayHoldQuarterCycle = HAL_OSPI_DHQC_ENABLE;
+  hospi1.Init.ChipSelectBoundary = 23;
+  hospi1.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_BYPASSED;
+  hospi1.Init.MaxTran = 0;
+  hospi1.Init.Refresh = 250;
+  if (HAL_OSPI_Init(&hospi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sHyperBusCfg.RWRecoveryTime = 3;
+  sHyperBusCfg.AccessTime = 6;
+  sHyperBusCfg.WriteZeroLatency = HAL_OSPI_LATENCY_ON_WRITE;
+  sHyperBusCfg.LatencyMode = HAL_OSPI_FIXED_LATENCY;
+  if (HAL_OSPI_HyperbusCfg(&hospi1, &sHyperBusCfg, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  HAL_OSPI_DLYB_Cfg_Struct.Units = 0;
+  HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = 0;
+  if (HAL_OSPI_DLYB_SetConfig(&hospi1, &HAL_OSPI_DLYB_Cfg_Struct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN OCTOSPI1_Init 2 */
+
+  /* USER CODE END OCTOSPI1_Init 2 */
+
+}
+
+/**
   * @brief USART3 Initialization Function
   * @param None
   * @retval None
@@ -215,12 +318,25 @@ static void MX_USART3_UART_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
   /* USER CODE BEGIN MX_GPIO_Init_1 */
 
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(HYPER_MUX_GPIO_Port, HYPER_MUX_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : HYPER_MUX_Pin */
+  GPIO_InitStruct.Pin = HYPER_MUX_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(HYPER_MUX_GPIO_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
 
@@ -228,6 +344,252 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void OctoSPI_RegisterDump(OSPI_HandleTypeDef *hospi)
+{
+  printf("\nOCTOSPI registers hex dump:\n");
+  printf("----------------------------\n");
+  printf("CR   : %08" PRIX32 "\n", hospi->Instance->CR);   
+  printf("DCR1 : %08" PRIX32 "\n", hospi->Instance->DCR1); 
+  printf("DCR2 : %08" PRIX32 "\n", hospi->Instance->DCR2);
+  printf("DCR3 : %08" PRIX32 "\n", hospi->Instance->DCR3); 
+  printf("DCR4 : %08" PRIX32 "\n", hospi->Instance->DCR4); 
+  printf("SR   : %08" PRIX32 "\n", hospi->Instance->SR);   
+  printf("FCR  : %08" PRIX32 "\n", hospi->Instance->FCR);  
+  printf("DLR  : %08" PRIX32 "\n", hospi->Instance->DLR);  
+  printf("AR   : %08" PRIX32 "\n", hospi->Instance->AR);   
+  printf("DR   : %08" PRIX32 "\n", hospi->Instance->DR);   
+  printf("PSMKR: %08" PRIX32 "\n", hospi->Instance->PSMKR);
+  printf("PSMAR: %08" PRIX32 "\n", hospi->Instance->PSMAR);
+  printf("PIR  : %08" PRIX32 "\n", hospi->Instance->PIR);  
+  printf("CCR  : %08" PRIX32 "\n", hospi->Instance->CCR);  
+  printf("TCR  : %08" PRIX32 "\n", hospi->Instance->TCR);  
+  printf("IR   : %08" PRIX32 "\n", hospi->Instance->IR);   
+  printf("ABR  : %08" PRIX32 "\n", hospi->Instance->ABR);  
+  printf("LPTR : %08" PRIX32 "\n", hospi->Instance->LPTR); 
+  printf("WPCCR: %08" PRIX32 "\n", hospi->Instance->WPCCR);
+  printf("WPTCR: %08" PRIX32 "\n", hospi->Instance->WPTCR);
+  printf("WPIR : %08" PRIX32 "\n", hospi->Instance->WPIR); 
+  printf("WPABR: %08" PRIX32 "\n", hospi->Instance->WPABR);
+  printf("WCCR : %08" PRIX32 "\n", hospi->Instance->WCCR); 
+  printf("WTCR : %08" PRIX32 "\n", hospi->Instance->WTCR); 
+  printf("WIR  : %08" PRIX32 "\n", hospi->Instance->WIR);  
+  printf("WABR : %08" PRIX32 "\n", hospi->Instance->WABR); 
+  printf("HLCR : %08" PRIX32 "\n", hospi->Instance->HLCR); 
+  printf("DONE!\n");
+}
+
+// Define to use SRAM instead of HyperRAM:
+// #define USE_LOCAL_SRAM     
+// 
+// Define only one:
+// #define TEST_8_BIT
+#define TEST_16_BIT
+// #define TEST_32_BIT
+
+uint8_t sram_memory_test_block[8192] = {0};
+
+void RunHyperRAMTest(void)
+{
+  printf("HyperRAM test...\n");
+
+  OSPI_HyperbusCmdTypeDef sCommand = {0};
+  OSPI_MemoryMappedTypeDef sMemMappedCfg = {0};
+    
+  sCommand.AddressSpace = HAL_OSPI_MEMORY_ADDRESS_SPACE;
+  sCommand.AddressSize  = HAL_OSPI_ADDRESS_32_BITS;
+  sCommand.DQSMode      = HAL_OSPI_DQS_ENABLE;
+  sCommand.Address      = 0;
+  sCommand.NbData       = 1;
+  if (HAL_OSPI_HyperbusCmd(&hospi1, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+  {
+      Error_Handler();
+  }
+  
+  // disable timeout (which will keep nCS low)
+  sMemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_DISABLE;    
+  sMemMappedCfg.TimeOutPeriod     = 0x00;  
+  // sMemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_ENABLE;
+  // sMemMappedCfg.TimeOutPeriod     = 0x08; // experimented with 6 clocks as specified in errata but system crashed
+  if (HAL_OSPI_MemoryMapped(&hospi1, &sMemMappedCfg) != HAL_OK)
+  {
+      Error_Handler();
+  }
+  
+  HAL_Delay(10);  // just to be sure..
+  
+  printf("Register dump post memory mapping\n");
+  OctoSPI_RegisterDump(&hospi1);
+
+#if 0
+  // LL_DLYB_CfgTypeDef dlyb_cfg, dlyb_cfg_test;
+  HAL_OSPI_DLYB_CfgTypeDef dlyb_cfg, dlyb_cfg_test;
+
+  HAL_OSPI_DLYB_GetConfig(&hospi1,&dlyb_cfg);
+  printf("Units: %d PhaseSel %d before call\n", dlyb_cfg.Units, dlyb_cfg.PhaseSel);
+  
+  if (HAL_OSPI_DLYB_GetClockPeriod(&hospi1,&dlyb_cfg) != HAL_OK)
+  {
+    printf("HAL_OSPI_DLYB_GetClockPeriod() failed\n");
+  }
+
+  printf("Units: %d PhaseSel %d after call\n", dlyb_cfg.Units, dlyb_cfg.PhaseSel);
+#endif
+
+  // "manufacture" a 32-bit value memory address that can be cast to point to anything:
+  #ifdef USE_LOCAL_SRAM
+    uint8_t *mem_ptr = &sram_memory_test_block[0];
+    uint32_t mem_addr = (uint32_t)mem_ptr;
+    printf("Using SRAM - mem_addr: %08" PRIX32 "\n", mem_addr);
+  #else
+    printf("Using HyperRAM - mem_addr: %08" PRIX32 "\n", OCTOSPI1_BASE);
+  #endif
+
+  while(true)
+  {
+#ifdef TEST_8_BIT
+    // TEST 2
+    // 1) write 4 bytes
+    // 2) read 4 bytes
+    // 3) dump read and write arrays
+    // uint8_t w_array[] = {0x01, 0x23, 0x45, 0x67};
+    uint8_t w_array[] = {0xFE, 0xDC, 0xBA, 0x98};
+    uint8_t r_array[4];
+    uint8_t index = 0;
+    uint8_t address_offset = 0;
+
+    for(address_offset = 0x5A, index = 0; index < 4; address_offset++, index++)
+    {
+      #ifdef USE_LOCAL_SRAM
+      *((uint8_t*)(mem_addr + address_offset)) = w_array[index];       // write data to hyperram at increasing address
+      #else
+      *((uint8_t*)(OCTOSPI1_BASE + address_offset)) = w_array[index];       // write data to hyperram at increasing address
+      #endif
+    }
+
+    for(address_offset = 0x5A, index = 0; index < 4; address_offset++, index++)
+    {
+      r_array[index] = 0x00;
+      #ifdef USE_LOCAL_SRAM
+      r_array[index] = *((uint8_t*)(mem_addr + address_offset));         // read data from hyperram into val
+      #else
+      r_array[index] = *((uint8_t*)(OCTOSPI1_BASE + address_offset));         // read data from hyperram into val
+      #endif
+    }
+
+    printf("W: ");
+    for(index = 0; index < 4; index++)
+    {
+      printf("%02X ", w_array[index]);
+    }
+    printf("\n");
+
+    printf("R: ");
+    for(index = 0; index < 4; index++)
+    {
+      printf("%02X ", r_array[index]);
+    }
+    printf("\n\n");
+
+    HAL_Delay(100);   // slow down prints..
+#endif
+
+#ifdef TEST_32_BIT
+    // TEST 3
+    // 1) write 4 32-bit words 
+    // 2) read 4 32-bit words
+    // 3) dump read and write arrays
+    // uint32_t w_array[] = {0xAAAAAAAA, 0xBBBBBBBB, 0xCCCCCCCC, 0xDDDDDDDD};
+    uint32_t w_array[] = {0x01234567, 0x89ABCDEF, 0x01234567, 0x89ABCDEF};    
+    uint32_t r_array[4];
+    uint32_t index = 0;
+    uint32_t address_offset = 0;
+
+    for(address_offset = 0x5A, index = 0; index < 4; address_offset+=4, index++)
+    {
+      #ifdef USE_LOCAL_SRAM
+      *((uint32_t*)(mem_addr + address_offset)) = w_array[index];       // write data to hyperram at increasing address      
+      #else
+      *((uint32_t*)(OCTOSPI1_BASE + address_offset)) = w_array[index];       // write data to hyperram at increasing address
+      #endif
+    }
+
+    for(address_offset = 0x5A, index = 0; index < 4; address_offset+=4, index++)
+    {
+      r_array[index] = 0x00;
+      #ifdef USE_LOCAL_SRAM
+      r_array[index] = *((uint32_t*)(mem_addr + address_offset));         // read data from hyperram into val
+      #else
+      r_array[index] = *((uint32_t*)(OCTOSPI1_BASE + address_offset));         // read data from hyperram into val
+      #endif
+    }
+
+    printf("W: ");
+    for(index = 0; index < 4; index++)
+    {
+      printf("%08" PRIX32 " ", w_array[index]);
+    }
+    printf("\n");
+
+    printf("R: ");
+    for(index = 0; index < 4; index++)
+    {
+      printf("%08" PRIX32 " ", r_array[index]);
+    }
+    printf("\n\n");
+
+    HAL_Delay(100);   // slow down prints..
+#endif
+
+#ifdef TEST_16_BIT
+    // TEST 4
+    // 1) write 4 16-bit words 
+    // 2) read 4 16-bit words
+    // 3) dump read and write arrays
+    uint16_t w_array[] = {0x0123, 0x4567, 0x89AB, 0xCDEF};
+    uint16_t r_array[4];
+    uint16_t index = 0;
+    uint16_t address_offset = 0;
+
+    for(address_offset = 0x5A, index = 0; index < 4; address_offset+=2, index++)
+    {
+      #ifdef USE_LOCAL_SRAM
+      *((uint16_t*)(mem_addr + address_offset)) = w_array[index];       // write data to sram at increasing address
+      #else
+      *((uint16_t*)(OCTOSPI1_BASE + address_offset)) = w_array[index];       // write data to hyperram at increasing address
+      #endif
+    }
+
+    for(address_offset = 0x5A, index = 0; index < 4; address_offset+=2, index++)
+    {
+      r_array[index] = 0x00;
+      #ifdef USE_LOCAL_SRAM
+      r_array[index] = *((uint16_t*)(mem_addr + address_offset));         // read data from sram into r_array
+      #else
+      r_array[index] = *((uint16_t*)(OCTOSPI1_BASE + address_offset));         // read data from hyperram into r_array
+      #endif
+    }
+
+    printf("W: ");
+    for(index = 0; index < 4; index++)
+    {
+      printf("%04X ", w_array[index]);
+    }
+    printf("\n");
+
+    printf("R: ");
+    for(index = 0; index < 4; index++)
+    {
+      printf("%04X ", r_array[index]);
+    }
+    printf("\n\n");
+
+    HAL_Delay(100);   // slow down prints..
+#endif
+
+
+  }
+
+}
 
 /* USER CODE END 4 */
 

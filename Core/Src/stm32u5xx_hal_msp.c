@@ -77,6 +77,133 @@ void HAL_MspInit(void)
 }
 
 /**
+  * @brief OSPI MSP Initialization
+  * This function configures the hardware resources used in this example
+  * @param hospi: OSPI handle pointer
+  * @retval None
+  */
+void HAL_OSPI_MspInit(OSPI_HandleTypeDef* hospi)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+  if(hospi->Instance==OCTOSPI1)
+  {
+    /* USER CODE BEGIN OCTOSPI1_MspInit 0 */
+
+    /* USER CODE END OCTOSPI1_MspInit 0 */
+
+  /** Initializes the peripherals clock
+  */
+    PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_OSPI;
+    PeriphClkInit.OspiClockSelection = RCC_OSPICLKSOURCE_SYSCLK;
+    if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    /* Peripheral clock enable */
+    __HAL_RCC_OSPI1_CLK_ENABLE();
+
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    /**OCTOSPI1 GPIO Configuration
+    PC0     ------> OCTOSPI1_IO7
+    PC1     ------> OCTOSPI1_IO4
+    PC2     ------> OCTOSPI1_IO5
+    PC3     ------> OCTOSPI1_IO6
+    PA0     ------> OCTOSPI1_NCS
+    PA6     ------> OCTOSPI1_IO3
+    PA7     ------> OCTOSPI1_IO2
+    PB0     ------> OCTOSPI1_IO1
+    PB1     ------> OCTOSPI1_IO0
+    PB2     ------> OCTOSPI1_DQS
+    PB10     ------> OCTOSPI1_CLK
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_0;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF3_OCTOSPI1;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF10_OCTOSPI1;
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_6|GPIO_PIN_7;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF10_OCTOSPI1;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF10_OCTOSPI1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    /* OCTOSPI1 interrupt Init */
+    HAL_NVIC_SetPriority(OCTOSPI1_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(OCTOSPI1_IRQn);
+    /* USER CODE BEGIN OCTOSPI1_MspInit 1 */
+
+    /* USER CODE END OCTOSPI1_MspInit 1 */
+
+  }
+
+}
+
+/**
+  * @brief OSPI MSP De-Initialization
+  * This function freeze the hardware resources used in this example
+  * @param hospi: OSPI handle pointer
+  * @retval None
+  */
+void HAL_OSPI_MspDeInit(OSPI_HandleTypeDef* hospi)
+{
+  if(hospi->Instance==OCTOSPI1)
+  {
+    /* USER CODE BEGIN OCTOSPI1_MspDeInit 0 */
+
+    /* USER CODE END OCTOSPI1_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_OSPI1_CLK_DISABLE();
+
+    /**OCTOSPI1 GPIO Configuration
+    PC0     ------> OCTOSPI1_IO7
+    PC1     ------> OCTOSPI1_IO4
+    PC2     ------> OCTOSPI1_IO5
+    PC3     ------> OCTOSPI1_IO6
+    PA0     ------> OCTOSPI1_NCS
+    PA6     ------> OCTOSPI1_IO3
+    PA7     ------> OCTOSPI1_IO2
+    PB0     ------> OCTOSPI1_IO1
+    PB1     ------> OCTOSPI1_IO0
+    PB2     ------> OCTOSPI1_DQS
+    PB10     ------> OCTOSPI1_CLK
+    */
+    HAL_GPIO_DeInit(GPIOC, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
+
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|GPIO_PIN_6|GPIO_PIN_7);
+
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10);
+
+    /* OCTOSPI1 interrupt DeInit */
+    HAL_NVIC_DisableIRQ(OCTOSPI1_IRQn);
+    /* USER CODE BEGIN OCTOSPI1_MspDeInit 1 */
+
+    /* USER CODE END OCTOSPI1_MspDeInit 1 */
+  }
+
+}
+
+/**
   * @brief UART MSP Initialization
   * This function configures the hardware resources used in this example
   * @param huart: UART handle pointer
