@@ -244,7 +244,7 @@ static void MX_OCTOSPI1_Init(void)
   hospi1.Init.SampleShifting = HAL_OSPI_SAMPLE_SHIFTING_NONE;
   hospi1.Init.DelayHoldQuarterCycle = HAL_OSPI_DHQC_ENABLE;
   hospi1.Init.ChipSelectBoundary = 23;
-  hospi1.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_BYPASSED;
+  hospi1.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_USED;
   hospi1.Init.MaxTran = 0;
   hospi1.Init.Refresh = 250;
   if (HAL_OSPI_Init(&hospi1) != HAL_OK)
@@ -260,12 +260,68 @@ static void MX_OCTOSPI1_Init(void)
     Error_Handler();
   }
   HAL_OSPI_DLYB_Cfg_Struct.Units = 0;
-  HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = 0;
+  HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = 4;
   if (HAL_OSPI_DLYB_SetConfig(&hospi1, &HAL_OSPI_DLYB_Cfg_Struct) != HAL_OK)
   {
     Error_Handler();
   }
   /* USER CODE BEGIN OCTOSPI1_Init 2 */
+
+// *******************
+// Delay block tuning: (override CUBE MX settings)
+// *******************
+// Settings:
+// #define TUNE_DELAY_BLOCK           // define to use tuning and print values
+// #define RESTORE_CUBE_MX_SETTINGS   // define to restore original CUBE MX settings (print values only)
+
+#ifdef TUNE_DELAY_BLOCK
+  HAL_OSPI_DLYB_CfgTypeDef dlyb_cfg, dlyb_cfg_mx_settings;
+
+  // save CUBE MX settings (done this way since we can't modify above CUBE MX generated code)
+  dlyb_cfg_mx_settings.Units = HAL_OSPI_DLYB_Cfg_Struct.Units;
+  dlyb_cfg_mx_settings.PhaseSel = HAL_OSPI_DLYB_Cfg_Struct.PhaseSel;
+
+  HAL_OSPI_DLYB_GetConfig(&hospi1,&dlyb_cfg);
+  printf("\n\nDelay block tuning:\n");
+  
+  while(1)
+  {
+    // bug in HAL code might cause the call to fail or return data == 0 so attempt repeatedly
+    if(HAL_OSPI_DLYB_GetClockPeriod(&hospi1,&dlyb_cfg) != HAL_OK || dlyb_cfg.Units == 0 || dlyb_cfg.PhaseSel == 0)
+    { 
+      printf("HAL_OSPI_DLYB_GetClockPeriod() failed - retrying...\n");
+      HAL_Delay(100);
+    }
+    else
+      break;
+  }
+
+  printf("Units: %08" PRIX32 " PhaseSel %08" PRIX32 " after call to HAL_OSPI_DLYB_GetClockPeriod() \n", dlyb_cfg.Units, dlyb_cfg.PhaseSel);
+
+  /*when DTR, PhaseSel is divided by 4 (emperic value)*/
+  dlyb_cfg.PhaseSel /=4;
+
+  #ifdef RESTORE_CUBE_MX_SETTINGS
+    // don't use tuning result - restore original settings
+    // HAL_OSPI_DLYB_Cfg_Struct.Units = 0;
+    // HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = 4;
+    HAL_OSPI_DLYB_Cfg_Struct.Units = dlyb_cfg_mx_settings.Units;
+    HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = dlyb_cfg_mx_settings.PhaseSel; 
+  #else
+    // use tuning result
+    HAL_OSPI_DLYB_Cfg_Struct.Units = dlyb_cfg.Units;
+    HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = dlyb_cfg.PhaseSel;
+  #endif
+
+  printf("Units: %08" PRIX32 " PhaseSel %08" PRIX32 " (values used)\n", HAL_OSPI_DLYB_Cfg_Struct.Units, HAL_OSPI_DLYB_Cfg_Struct.PhaseSel);
+
+  if (HAL_OSPI_DLYB_SetConfig(&hospi1, &HAL_OSPI_DLYB_Cfg_Struct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+
+#endif // TUNE_DELAY_BLOCK
 
   /* USER CODE END OCTOSPI1_Init 2 */
 
@@ -427,21 +483,6 @@ void RunHyperRAMTest(void)
   
   printf("Register dump post memory mapping\n");
   OctoSPI_RegisterDump(&hospi1);
-
-#if 0
-  // LL_DLYB_CfgTypeDef dlyb_cfg, dlyb_cfg_test;
-  HAL_OSPI_DLYB_CfgTypeDef dlyb_cfg, dlyb_cfg_test;
-
-  HAL_OSPI_DLYB_GetConfig(&hospi1,&dlyb_cfg);
-  printf("Units: %d PhaseSel %d before call\n", dlyb_cfg.Units, dlyb_cfg.PhaseSel);
-  
-  if (HAL_OSPI_DLYB_GetClockPeriod(&hospi1,&dlyb_cfg) != HAL_OK)
-  {
-    printf("HAL_OSPI_DLYB_GetClockPeriod() failed\n");
-  }
-
-  printf("Units: %d PhaseSel %d after call\n", dlyb_cfg.Units, dlyb_cfg.PhaseSel);
-#endif
 
   // "manufacture" a 32-bit value memory address that can be cast to point to anything:
   #ifdef USE_LOCAL_SRAM
