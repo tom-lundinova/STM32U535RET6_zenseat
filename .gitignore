@@ -46,6 +46,9 @@ out
 /Debug/*
 # keep .elf
 
+/ST_DLYB_Example/*
+
+
 # temproarily ignore pre-build bash script while making changes (so the commit keeps clean)
 # update_version.sh               
 

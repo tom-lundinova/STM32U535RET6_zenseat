@@ -235,7 +235,7 @@ static void MX_OCTOSPI1_Init(void)
   hospi1.Init.FifoThreshold = 4;
   hospi1.Init.DualQuad = HAL_OSPI_DUALQUAD_DISABLE;
   hospi1.Init.MemoryType = HAL_OSPI_MEMTYPE_HYPERBUS;
-  hospi1.Init.DeviceSize = 24;
+  hospi1.Init.DeviceSize = 26;
   hospi1.Init.ChipSelectHighTime = 8;
   hospi1.Init.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE;
   hospi1.Init.ClockMode = HAL_OSPI_CLOCK_MODE_0;
@@ -312,6 +312,10 @@ static void MX_OCTOSPI1_Init(void)
     HAL_OSPI_DLYB_Cfg_Struct.Units = dlyb_cfg.Units;
     HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = dlyb_cfg.PhaseSel;
   #endif
+
+// HAL_OSPI_DLYB_Cfg_Struct.Units = dlyb_cfg.Units / 8;
+// HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = 0;
+
 
   printf("Units: %08" PRIX32 " PhaseSel %08" PRIX32 " (values used)\n", HAL_OSPI_DLYB_Cfg_Struct.Units, HAL_OSPI_DLYB_Cfg_Struct.PhaseSel);
 
