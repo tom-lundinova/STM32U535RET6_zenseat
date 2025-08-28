@@ -271,7 +271,7 @@ static void MX_OCTOSPI1_Init(void)
 // Delay block tuning: (override CUBE MX settings)
 // *******************
 // Settings:
-// #define TUNE_DELAY_BLOCK           // define to use tuning and print values
+#define TUNE_DELAY_BLOCK           // define to use tuning and print values
 // #define RESTORE_CUBE_MX_SETTINGS   // define to restore original CUBE MX settings (print values only)
 
 #ifdef TUNE_DELAY_BLOCK
@@ -594,13 +594,21 @@ void RunHyperRAMTest(void)
     // 1) write 4 16-bit words 
     // 2) read 4 16-bit words
     // 3) dump read and write arrays
+
+// #define TEST_SINGLE_ACCESS_FOR_LA // (easier to see one access on logic analyzer)
+
+#ifdef TEST_SINGLE_ACCESS_FOR_LA
+  uint32_t num_array_elements = 1;
+#else
+  uint32_t num_array_elements = 4;
+#endif    
     uint16_t w_array[] = {0x0123, 0x4567, 0x89AB, 0xCDEF};
     // uint16_t w_array[] = {0xFEDC, 0xBA98, 0x7654, 0x3210};
     uint16_t r_array[4];
     uint16_t index = 0;
     uint16_t address_offset = 0;
 
-    for(address_offset = 0x5A, index = 0; index < 4; address_offset+=2, index++)
+    for(address_offset = 0x5A, index = 0; index < num_array_elements; address_offset+=2, index++)
     {
       #ifdef USE_LOCAL_SRAM
       *((uint16_t*)(mem_addr + address_offset)) = w_array[index];       // write data to sram at increasing address
@@ -609,7 +617,7 @@ void RunHyperRAMTest(void)
       #endif
     }
 
-    for(address_offset = 0x5A, index = 0; index < 4; address_offset+=2, index++)
+    for(address_offset = 0x5A, index = 0; index < num_array_elements; address_offset+=2, index++)
     {
       r_array[index] = 0x00;
       #ifdef USE_LOCAL_SRAM
@@ -620,14 +628,14 @@ void RunHyperRAMTest(void)
     }
 
     printf("W: ");
-    for(index = 0; index < 4; index++)
+    for(index = 0; index < num_array_elements; index++)
     {
       printf("%04X ", w_array[index]);
     }
     printf("\n");
 
     printf("R: ");
-    for(index = 0; index < 4; index++)
+    for(index = 0; index < num_array_elements; index++)
     {
       printf("%04X ", r_array[index]);
     }
