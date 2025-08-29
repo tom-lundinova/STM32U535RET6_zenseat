@@ -48,6 +48,32 @@ OSPI_HandleTypeDef hospi1;
 
 UART_HandleTypeDef huart3;
 
+// Stuff for ST "exhaustive tuning":
+/* Read Operations */
+#define READ_CMD                                0x00
+#define READ_LINEAR_BURST_CMD                   0x20
+#define READ_HYBRID_BURST_CMD                   0x3F
+
+/* Write Operations */
+#define WRITE_CMD                               0x80
+#define WRITE_LINEAR_BURST_CMD                  0xA0
+#define WRITE_HYBRID_BURST_CMD                  0xBF
+
+/* Reset Operations */
+#define RESET_CMD                               0xFF
+
+/* Register Operations */
+#define READ_REG_CMD                            0x40
+#define WRITE_REG_CMD                           0xC0
+
+/* Default dummy clocks cycles */
+#define DUMMY_CLOCK_CYCLES_READ                 5
+#define DUMMY_CLOCK_CYCLES_WRITE                4
+
+#define BUFFER_LENGTH          2048
+uint8_t TX_Buffer[BUFFER_LENGTH];
+uint8_t RX_Buffer[BUFFER_LENGTH];
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -59,8 +85,10 @@ static void MX_USART3_UART_Init(void);
 static void MX_OCTOSPI1_Init(void);
 static void MX_ICACHE_Init(void);
 /* USER CODE BEGIN PFP */
-void RunHyperRAMTest(void);
+void RunHyperRAMTest(uint32_t num_iterations);
 void OctoSPI_RegisterDump(OSPI_HandleTypeDef *hospi);
+
+void ST_ExhaustiveTuningDLYB(void);
 
 /* USER CODE END PFP */
 
@@ -107,8 +135,13 @@ int main(void)
   MX_OCTOSPI1_Init();
   MX_ICACHE_Init();
   /* USER CODE BEGIN 2 */
+  
+  ST_ExhaustiveTuningDLYB();
+  printf("Done!\n");
+  while(true);
+
   OctoSPI_RegisterDump(&hospi1);
-  RunHyperRAMTest();
+  RunHyperRAMTest(100000);
 
   
   /* USER CODE END 2 */
@@ -267,12 +300,12 @@ static void MX_OCTOSPI1_Init(void)
   }
   /* USER CODE BEGIN OCTOSPI1_Init 2 */
 
-// *******************
-// Delay block tuning: (override CUBE MX settings)
-// *******************
+// ****************************
+// Delay block tuning using HAL: (override CUBE MX settings)
+// ****************************
 // Settings:
-#define TUNE_DELAY_BLOCK           // define to use tuning and print values
-// #define RESTORE_CUBE_MX_SETTINGS   // define to restore original CUBE MX settings (print values only)
+// #define TUNE_DELAY_BLOCK             // define to use tuning and print values
+// #define RESTORE_CUBE_MX_SETTINGS     // define to restore original CUBE MX settings (print values only) when TUNE_DELAY_BLOCK is defined 
 
 #ifdef TUNE_DELAY_BLOCK
   HAL_OSPI_DLYB_CfgTypeDef dlyb_cfg, dlyb_cfg_mx_settings;
@@ -319,7 +352,6 @@ static void MX_OCTOSPI1_Init(void)
   {
     Error_Handler();
   }
-
 
 #endif // TUNE_DELAY_BLOCK
 
@@ -393,7 +425,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(HYPER_MUX_GPIO_Port, HYPER_MUX_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(HYPER_MUX_GPIO_Port, HYPER_MUX_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : HYPER_MUX_Pin */
   GPIO_InitStruct.Pin = HYPER_MUX_Pin;
@@ -451,8 +483,7 @@ void OctoSPI_RegisterDump(OSPI_HandleTypeDef *hospi)
 // #define TEST_32_BIT
 
 uint8_t sram_memory_test_block[8192] = {0};
-
-void RunHyperRAMTest(void)
+void RunHyperRAMTest(uint32_t num_iterations)
 {
   printf("HyperRAM test...\n");
 
@@ -481,8 +512,8 @@ void RunHyperRAMTest(void)
   
   HAL_Delay(10);  // just to be sure..
   
-  printf("Register dump post memory mapping\n");
-  OctoSPI_RegisterDump(&hospi1);
+  // printf("Register dump post memory mapping\n");
+  // OctoSPI_RegisterDump(&hospi1);                   // uncomment to dump regs
 
   // "manufacture" a 32-bit value memory address that can be cast to point to anything:
   #ifdef USE_LOCAL_SRAM
@@ -493,7 +524,8 @@ void RunHyperRAMTest(void)
     printf("Using HyperRAM - mem_addr: %08" PRIX32 "\n", OCTOSPI1_BASE);
   #endif
 
-  while(true)
+  // while(true)
+  for(uint32_t iter=0; iter < num_iterations; iter++)
   {
 #ifdef TEST_8_BIT
     // TEST 2
@@ -648,6 +680,170 @@ void RunHyperRAMTest(void)
   }
 
 }
+
+// ST "exhaustive tuning" procedure instead of reference guide / HAL
+void ST_ExhaustiveTuningDLYB(void)
+{
+  printf("\n\nDelay block tuning exhaustive:\n");
+__IO uint8_t CmdCplt;
+  LL_DLYB_CfgTypeDef dlyb_cfg,dlyb_cfg_test;
+  __IO   uint32_t ok=0,ko=0,k;
+  uint32_t sel;
+  uint32_t unit;
+  uint32_t jj;
+  uint32_t ii;
+  uint16_t index;
+  HAL_OSPI_DLYB_CfgTypeDef HAL_OSPI_DLYB_Cfg_Struct = {0};
+
+  // experiment to see if I can re-init in Memory Mapped mode:
+
+
+
+  printf(" ###################### Start Tuning ######################### \n");
+  
+  #if 1 // total re-write gleaned from ST code below...
+  OSPI_RegularCmdTypeDef sCommand = {0};
+
+  for(sel=1; sel <= DLYB_MAX_SELECT; sel++)       // all values of sel 1-12 
+  {
+    for(unit=0; unit <= DLYB_MAX_UNIT; unit++)    // all values of unit for each value of sel
+    {
+      printf("unit: %lu sel: %lu\n", unit, sel);
+    
+    }
+  }
+
+  // re-program delay block
+  
+  // (known bad values:)
+  // HAL_OSPI_DLYB_Cfg_Struct.Units = 64;
+  // HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = 11;
+  
+  HAL_OSPI_DLYB_Cfg_Struct.Units = 0;
+  HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = 4;
+  if (HAL_OSPI_DLYB_SetConfig(&hospi1, &HAL_OSPI_DLYB_Cfg_Struct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  RunHyperRAMTest(1);
+
+  HAL_OSPI_DeInit(&hospi1);
+  MX_OCTOSPI1_Init();
+  HAL_OSPI_DLYB_Cfg_Struct.Units = 64;
+  HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = 11;
+  if (HAL_OSPI_DLYB_SetConfig(&hospi1, &HAL_OSPI_DLYB_Cfg_Struct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  RunHyperRAMTest(1);
+
+  HAL_OSPI_DeInit(&hospi1);
+  MX_OCTOSPI1_Init();
+  HAL_OSPI_DLYB_Cfg_Struct.Units = 0;
+  HAL_OSPI_DLYB_Cfg_Struct.PhaseSel = 4;
+  if (HAL_OSPI_DLYB_SetConfig(&hospi1, &HAL_OSPI_DLYB_Cfg_Struct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  RunHyperRAMTest(1);
+
+
+  #else // (original ST code with strange values for Units and PhaseSel)
+  for( jj=0; jj<(DLYB_MAX_SELECT*DLYB_MAX_UNIT); jj++ )                           // SIGMA: jj = 0 to 1536 all possible values of Units and PhaseSel
+  {
+    ko=0;/*it will mentions if test is ok or not*/
+
+    /* Search the combination SEL / UNIT to obtain the total delay jj*/
+    for( sel=1; sel<(DLYB_MAX_SELECT+1); sel++ )                                  // SIGMA: sel = PhaseSel 1 to 12, try all values
+    {
+      if( ((jj%sel)==0) && ((jj/sel)<DLYB_MAX_UNIT) )                             
+      {
+        unit = jj/sel;                                                            
+        break;
+      }
+    }
+
+    printf("jj: %lu unit: %lu sel: %lu ", jj, unit, sel);
+
+    if( sel==(DLYB_MAX_SELECT+1) ) 
+    {
+      printf("value not reachable\n");
+      continue;  /* value not reachable */
+    }
+    else
+      printf("\n");
+  
+
+    /* Delay Block Configuration */
+    dlyb_cfg.PhaseSel =sel;
+    dlyb_cfg.Units =unit;
+  
+    /* DeInit OCTOSPI ------------------------------------------------ */
+    HAL_OSPI_DeInit(&hospi1);
+
+    /* Re-init octospi to clear communication configuration */
+    MX_OCTOSPI1_Init();
+
+    /*Set Delay Block configuration*/
+    HAL_OSPI_DLYB_SetConfig(&hospi1,&dlyb_cfg);
+
+    /* Reading Sequence (repeating 100 time read operation) ------------------ */
+    for(k=0;k<100;k++)                                                              // SIGMA: test read 100x
+    {
+      for( ii=BUFFER_LENGTH; ii>0; ii-- )
+      {RX_Buffer[ii-1] =0;}
+
+
+      sCommand.Instruction = READ_CMD;
+      sCommand.DummyCycles = DUMMY_CLOCK_CYCLES_READ;
+      sCommand.DQSMode     = HAL_OSPI_DQS_ENABLE;
+
+      if (HAL_OSPI_Command(&hospi1, &sCommand, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      if (HAL_OSPI_Receive(&hospi1, RX_Buffer, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
+      {
+        ko ++;
+        break;
+      }
+
+      /* 3- Result comparison ----------------------------------------------- */
+      for (index = 0; index < BUFFER_LENGTH; index++)
+      {
+        if (RX_Buffer[index] != TX_Buffer[index])
+        {
+          ko ++;
+          break;
+        }
+      }
+    }
+
+    /* Toggle Green led, Tuning is processing-------------------------------- */
+    BSP_LED_Toggle(LED7);
+    HAL_Delay (10);
+
+    /* Print Result --------------------------------------------------------- */
+    if (ko>0)
+    {
+      printf (" delay= %u, Sel = %u , Unit = %u , Test FAILED \n",jj, sel, unit);
+    }
+    else
+    {
+      printf (" delay= %u, Sel = %u , Unit = %u , Test PASSED \n",jj, sel, unit);
+    }
+  }
+  
+  #endif
+
+  /* End Tuning------------------------------------------------ */
+  printf (" ###################### End Tuning #########################\n");
+
+}
+
+
 
 /* USER CODE END 4 */
 
