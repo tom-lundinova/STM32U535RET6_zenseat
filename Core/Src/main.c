@@ -48,6 +48,7 @@ OSPI_HandleTypeDef hospi1;
 
 UART_HandleTypeDef huart3;
 
+/* USER CODE BEGIN PV */
 // Stuff for ST "exhaustive tuning":
 /* Read Operations */
 #define READ_CMD                                0x00
@@ -74,7 +75,6 @@ UART_HandleTypeDef huart3;
 uint8_t TX_Buffer[BUFFER_LENGTH];
 uint8_t RX_Buffer[BUFFER_LENGTH];
 
-/* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
 
@@ -425,7 +425,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(HYPER_MUX_GPIO_Port, HYPER_MUX_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(HYPER_MUX_GPIO_Port, HYPER_MUX_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : HYPER_MUX_Pin */
   GPIO_InitStruct.Pin = HYPER_MUX_Pin;
