@@ -136,9 +136,9 @@ int main(void)
   MX_ICACHE_Init();
   /* USER CODE BEGIN 2 */
   
-  ST_ExhaustiveTuningDLYB();
-  printf("Done!\n");
-  while(true);
+  // ST_ExhaustiveTuningDLYB();
+  // printf("Done!\n");
+  // while(true);
 
   OctoSPI_RegisterDump(&hospi1);
   RunHyperRAMTest(100000);
@@ -285,7 +285,7 @@ static void MX_OCTOSPI1_Init(void)
     Error_Handler();
   }
   sHyperBusCfg.RWRecoveryTime = 3;
-  sHyperBusCfg.AccessTime = 6;
+  sHyperBusCfg.AccessTime = 7;
   sHyperBusCfg.WriteZeroLatency = HAL_OSPI_LATENCY_ON_WRITE;
   sHyperBusCfg.LatencyMode = HAL_OSPI_FIXED_LATENCY;
   if (HAL_OSPI_HyperbusCfg(&hospi1, &sHyperBusCfg, HAL_OSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
@@ -304,7 +304,7 @@ static void MX_OCTOSPI1_Init(void)
 // Delay block tuning using HAL: (override CUBE MX settings)
 // ****************************
 // Settings:
-// #define TUNE_DELAY_BLOCK             // define to use tuning and print values
+#define TUNE_DELAY_BLOCK             // define to use tuning and print values
 // #define RESTORE_CUBE_MX_SETTINGS     // define to restore original CUBE MX settings (print values only) when TUNE_DELAY_BLOCK is defined 
 
 #ifdef TUNE_DELAY_BLOCK

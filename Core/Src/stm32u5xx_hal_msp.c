@@ -152,7 +152,25 @@ void HAL_OSPI_MspInit(OSPI_HandleTypeDef* hospi)
     HAL_NVIC_SetPriority(OCTOSPI1_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(OCTOSPI1_IRQn);
     /* USER CODE BEGIN OCTOSPI1_MspInit 1 */
+    // Addtional initialization from ST in Prauge to support hi-speed at 1.8V:
+    // -----------------------------------------------------------------------
+    // This requires additional Option Bytes to be changed using the STM32CubeProgrammer (external to CUBE IDE/MX):
+    // IO_VDD_HSLV: checked
+    // IO_VDDIO2_HSLV: checked
+    // NOTE!!! -> After this change, running the board at higher than 2.5V will damage it! Do not power with 3.3V! 
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOC,GPIO_PIN_0);
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOC,GPIO_PIN_1);
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOC,GPIO_PIN_2);
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOC,GPIO_PIN_3);
 
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOA,GPIO_PIN_0);
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOA,GPIO_PIN_6);
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOA,GPIO_PIN_7);
+
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOB,GPIO_PIN_0);
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOB,GPIO_PIN_1);
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOB,GPIO_PIN_2);
+    HAL_GPIO_EnableHighSPeedLowVoltage(GPIOB,GPIO_PIN_10);
     /* USER CODE END OCTOSPI1_MspInit 1 */
 
   }
