@@ -119,6 +119,7 @@ void HAL_OSPI_MspInit(OSPI_HandleTypeDef* hospi)
     PB1     ------> OCTOSPI1_IO0
     PB2     ------> OCTOSPI1_DQS
     PB10     ------> OCTOSPI1_CLK
+    PB12     ------> OCTOSPI1_NCLK
     */
     GPIO_InitStruct.Pin = GPIO_PIN_0;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -141,7 +142,8 @@ void HAL_OSPI_MspInit(OSPI_HandleTypeDef* hospi)
     GPIO_InitStruct.Alternate = GPIO_AF10_OCTOSPI1;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10;
+    GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10
+                          |GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
@@ -205,12 +207,14 @@ void HAL_OSPI_MspDeInit(OSPI_HandleTypeDef* hospi)
     PB1     ------> OCTOSPI1_IO0
     PB2     ------> OCTOSPI1_DQS
     PB10     ------> OCTOSPI1_CLK
+    PB12     ------> OCTOSPI1_NCLK
     */
     HAL_GPIO_DeInit(GPIOC, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3);
 
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_0|GPIO_PIN_6|GPIO_PIN_7);
 
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10
+                          |GPIO_PIN_12);
 
     /* OCTOSPI1 interrupt DeInit */
     HAL_NVIC_DisableIRQ(OCTOSPI1_IRQn);
